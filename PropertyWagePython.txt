@@ -1,0 +1,114 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load the Excel file into a DataFrame
+file_path = r'C:\Users\JustMe\Desktop\WORK research\Alamo_Workforce_Housing_Data_July_2023_2024_Detailed_Full.xlsx'
+df_alamo = pd.read_excel(file_path)
+
+# Filter the data for Single Family homes in July 2023 and July 2024
+single_family_july_2023 = df_alamo[(df_alamo['Property Type'] == 'Single Family') & (df_alamo['Month'] == 'July 2023')]
+single_family_july_2024 = df_alamo[(df_alamo['Property Type'] == 'Single Family') & (df_alamo['Month'] == 'July 2024')]
+
+# Extract the average prices for both years
+average_price_2023 = single_family_july_2023['Average Price'].values[0]
+average_price_2024 = single_family_july_2024['Average Price'].values[0]
+
+# Mortgage Calculation Parameters
+mortgage_rate = 0.05  # 5% annual mortgage rate
+loan_term = 30  # 30 years
+n_payments = loan_term * 12  # Total number of payments (360 months)
+down_payment_percentage = 0.20  # 20% down payment
+property_tax_rate = 0.025  # Property tax rate (2.5%)
+
+# Calculate the loan amount for both years
+loan_amount_2023 = average_price_2023 * (1 - down_payment_percentage)
+loan_amount_2024 = average_price_2024 * (1 - down_payment_percentage)
+
+# Calculate the monthly mortgage payment for both years
+monthly_payment_2023 = (loan_amount_2023 * mortgage_rate / 12) / (1 - (1 + mortgage_rate / 12) ** -n_payments)
+monthly_payment_2024 = (loan_amount_2024 * mortgage_rate / 12) / (1 - (1 + mortgage_rate / 12) ** -n_payments)
+
+# Calculate the annual mortgage payments
+annual_mortgage_payment_2023 = monthly_payment_2023 * 12
+annual_mortgage_payment_2024 = monthly_payment_2024 * 12
+
+# Calculate the annual property tax for both years
+annual_property_tax_2023 = average_price_2023 * property_tax_rate
+annual_property_tax_2024 = average_price_2024 * property_tax_rate
+
+# Calculate the required annual income assuming housing should be 30% of gross income
+required_annual_income_without_taxes_2023 = annual_mortgage_payment_2023 / 0.30
+required_annual_income_with_taxes_2023 = (annual_mortgage_payment_2023 + annual_property_tax_2023) / 0.30
+required_annual_income_without_taxes_2024 = annual_mortgage_payment_2024 / 0.30
+required_annual_income_with_taxes_2024 = (annual_mortgage_payment_2024 + annual_property_tax_2024) / 0.30
+
+# Calculate the hourly wage needed (assuming 2080 work hours per year)
+hours_per_year = 40 * 52  # 40 hours/week, 52 weeks/year
+
+hourly_wage_without_taxes_2023 = required_annual_income_without_taxes_2023 / hours_per_year
+hourly_wage_with_taxes_2023 = required_annual_income_with_taxes_2023 / hours_per_year
+hourly_wage_without_taxes_2024 = required_annual_income_without_taxes_2024 / hours_per_year
+hourly_wage_with_taxes_2024 = required_annual_income_with_taxes_2024 / hours_per_year
+
+# Prepare data for the bar chart
+labels = ['Average Home Price', 'Hourly Wage (No Taxes)', 'Hourly Wage (With Taxes)']
+home_prices_2023 = [average_price_2023, 0, 0]
+home_prices_2024 = [average_price_2024, 0, 0]
+wages_2023 = [0, hourly_wage_without_taxes_2023, hourly_wage_with_taxes_2023]
+wages_2024 = [0, hourly_wage_without_taxes_2024, hourly_wage_with_taxes_2024]
+
+x = range(len(labels))  # The label positions
+width = 0.35  # The width of the bars
+
+fig, ax1 = plt.subplots(figsize=(10, 6))
+
+# Bar chart for home prices
+bars1 = ax1.bar([pos - width/2 for pos in x], home_prices_2023, width=width, label='July 2023', color='blue')
+bars2 = ax1.bar([pos + width/2 for pos in x], home_prices_2024, width=width, label='July 2024', color='orange')
+
+ax1.set_ylabel('Home Price ($)', color='blue')
+ax1.tick_params(axis='y', labelcolor='blue')
+
+# Create a second y-axis for the wages
+ax2 = ax1.twinx()
+
+# Bar chart for wages
+bars3 = ax2.bar([pos - width/2 for pos in x], wages_2023, width=width, color='blue', alpha=0.6)
+bars4 = ax2.bar([pos + width/2 for pos in x], wages_2024, width=width, color='orange', alpha=0.6)
+
+ax2.set_ylabel('Hourly Wage ($)', color='black')
+ax2.tick_params(axis='y', labelcolor='black')
+
+# Add labels and titles
+ax1.set_xlabel('Category')
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+plt.title('Comparison of Housing Costs and Required Hourly Wage (July 2023 vs. July 2024)')
+
+# Add data labels
+def add_labels(bars):
+    for bar in bars:
+        height = bar.get_height()
+        if height > 0:  # Only add labels to non-zero bars
+            ax1.annotate(f'{height:,.2f}',
+                         xy=(bar.get_x() + bar.get_width() / 2, height),
+                         xytext=(0, 3),  # 3 points vertical offset
+                         textcoords="offset points",
+                         ha='center', va='bottom')
+
+add_labels(bars1)
+add_labels(bars2)
+add_labels(bars3)
+add_labels(bars4)
+
+# Place the legend outside the plot area
+ax1.legend(loc='upper center', bbox_to_anchor=(0.5, -0.15), fancybox=True, shadow=True, ncol=2)
+
+plt.grid(True)
+plt.show()
+# Here’s how the calculation works:
+#Mortgage Payments: Without property taxes, the mortgage payments are the primary cost, which is based on the home price, interest rate, loan term, and down payment.
+#Property Taxes: When you add property taxes (calculated as a percentage of the home price), this increases the total cost of owning the home.
+#Annual Income Requirement: The total housing cost (mortgage payments + property taxes) must be less than or equal to 30% of the gross income, which means the required income increases to accommodate the property taxes.
+#Hourly Wage Calculation: This higher income requirement directly translates into a higher required hourly wage.
+#The jump you're seeing in the chart from the hourly wage without taxes to the hourly wage with taxes reflects the significant impact of property taxes on overall housing costs. Since property taxes are ongoing annual expenses, they can make homeownership significantly more expensive, especially in areas with higher tax rates like the Alamo region.
